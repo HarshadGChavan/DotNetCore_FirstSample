@@ -1,0 +1,54 @@
+@model HomeDetailsViewModel
+@{
+    ViewBag.Title="Employee Details";
+    var PhotoPath ="../images/" +(Model.Employee.PhotoPath ?? "no_Image.png");
+}
+
+ <h1>@Model.PageTitle</h1>
+<br><br>
+@* @{
+    var employee =ViewBag.Employee as FirstSample.Models.Employee;
+} *@
+
+<div class="row justify-content-center m-3">
+    <div class="col-sm-8">
+        <div class="card">
+            <div class="card-header">
+                <h1>@Model.Employee.Name </h1>
+            </div>
+
+            <div class="card-body text-center">
+                <img class="card-img-top" src="@PhotoPath">
+
+                <h4>Employee ID : @Model.Employee.Id</h4> 
+                <h4>Email       : @Model.Employee.Email</h4> 
+                <h4>Department  : @Model.Employee.Department</h4> 
+
+            </div>
+
+            <div class="card-footer text-center">
+                <a asp-controller="home" asp-action="index" class="btn btn-primary">Back</a>
+                <a asp-controller="Home" asp-action="Edit" asp-route-id="@Model.Employee.Id" class="btn btn-primary">Edit</a>
+                <a href="#" class="btn btn-primary">Delete</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*
+<div>
+    Name : @Model.Employee.Name
+</div>
+<div>
+    Email : @Model.Employee.Email
+</div>
+<div>
+    Department : @Model.Employee.Department
+</div>
+
+@section Scripts{
+    <script src="~/js/CustomScripts.js">
+    </script>
+}
+
+*@
