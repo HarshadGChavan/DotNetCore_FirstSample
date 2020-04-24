@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using  FirstSample.Utilities;
 
 namespace FirstSample.ViewModel
 {
@@ -9,6 +10,8 @@ namespace FirstSample.ViewModel
         [Required]
         [EmailAddress]
         [Remote(action:"IsEmailAvailable",controller:"Account")]
+        [ValidEmailDomain(allowedDomain:"Gmail.com",
+                          ErrorMessage="Email domain must be Gmail.com")]
         public string Email { get; set; }
 
         [Required]
