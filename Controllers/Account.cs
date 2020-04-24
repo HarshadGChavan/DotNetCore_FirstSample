@@ -21,6 +21,23 @@ namespace FirstSample.Controllers
             this._userManager = userManager;
         }
 
+         [HttpPost][HttpGet]
+        [ActionName("IsEmailAvailable")]
+        [AllowAnonymous]
+        public async Task<IActionResult> IsEmailAvailable(string  email)
+        {
+            var result =await _userManager.FindByEmailAsync(email);
+            if(result == null)
+            {
+                // if user not avilable, then return true
+                return Json(true);
+            }
+            else
+            {
+                return Json($"{email} already in use. Please enter another userid.");
+            }
+        }
+
         [HttpGet]
         [ActionName("Register")]
         [AllowAnonymous]

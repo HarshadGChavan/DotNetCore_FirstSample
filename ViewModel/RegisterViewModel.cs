@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc;
 
 namespace FirstSample.ViewModel
 {
@@ -7,6 +8,7 @@ namespace FirstSample.ViewModel
         
         [Required]
         [EmailAddress]
+        [Remote(action:"IsEmailAvailable",controller:"Account")]
         public string Email { get; set; }
 
         [Required]
