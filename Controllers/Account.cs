@@ -6,16 +6,17 @@ using Microsoft.Extensions.Logging;
 using FirstSample.ViewModel;
 using Microsoft.AspNetCore.Identity;
 using System.Threading.Tasks;
+using FirstSample.Models;
 
 namespace FirstSample.Controllers
 {
     public class Account : Controller
     {
-        private readonly UserManager<IdentityUser> _userManager;
-        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
 
-        public Account(UserManager<IdentityUser> userManager,
-                       SignInManager<IdentityUser> signInManager)
+        public Account(UserManager<ApplicationUser> userManager,
+                       SignInManager<ApplicationUser> signInManager)
         {
             this._signInManager = signInManager;
             this._userManager = userManager;
@@ -55,18 +56,19 @@ namespace FirstSample.Controllers
             if(ModelState.IsValid)
             {
                 // Create identity user and assign values for userid and Email
-                var identityUser = new IdentityUser()
+                var user = new ApplicationUser()
                 {
                     UserName=model.Email ,
-                    Email=model.Email
+                    Email=model.Email,
+                    City =model.City
                 };
 
                 // call async method of usermanger to create user and store it in Database
-                var Result = await _userManager.CreateAsync(identityUser,model.Password);
+                var Result = await _userManager.CreateAsync(user,model.Password);
                 // If result is success i.e. user created
                 if(Result.Succeeded)
                 {
-                    await _signInManager.SignInAsync(identityUser,isPersistent:false);
+                    await _signInManager.SignInAsync(user,isPersistent:false);
                     return RedirectToAction("Index","Home");
                 }
                 

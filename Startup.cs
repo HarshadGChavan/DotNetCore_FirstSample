@@ -31,7 +31,7 @@ namespace FirstSample
             services.AddDbContextPool<AppDBContext>(optionsAction=>optionsAction.UseSqlServer(Configuration.GetConnectionString("EmployeeDbConnection")));
             services.AddControllersWithViews();
             services.AddTransient<IEmployeeRepository,SQLEmployeeRepository>();
-            services.AddIdentity<IdentityUser,IdentityRole>()
+            services.AddIdentity<ApplicationUser,IdentityRole>()
                                             .AddEntityFrameworkStores<AppDBContext>();
             services.Configure<IdentityOptions>(options=>
             {
