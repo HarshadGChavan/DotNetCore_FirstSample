@@ -1,0 +1,46 @@
+@model List<UserRoleViewModel>
+
+@{
+    ViewBag.Title ="Edit Users in Role";
+    var roleId = ViewBag.roleId;
+}
+
+<form method="POST">
+    <div class="card">
+        <div class="card-header">
+            <h2>Add or Remove Users from this role</h2>
+        </div>
+    </div>
+    <div class="card-body">
+     @* @foreach (var itemUser in Model)
+        {       
+            <div class="form-check m-1">
+                <input type="hidden" asp-for="@itemUser.UserName">
+                <input type="hidden" asp-for="@itemUser.UserId">
+               <input asp-for="@itemUser.IsSelected" class="form-check-input">
+                <label class="for-check-label" asp-for="@itemUser.IsSelected" >
+                    @itemUser.UserName
+                </label>
+           </div>
+        }   *@
+    
+     @for (int i = 0; i < Model.Count; i++)
+        {
+            <div class="form-check m-1">
+                <input type="hidden" asp-for="@Model[i].UserName">
+                <input type="hidden" asp-for="@Model[i].UserId">
+               <input asp-for="@Model[i].IsSelected" class="form-check-input">
+                <label class="for-check-label" asp-for="@Model[i].IsSelected" >
+                    @Model[i].UserName
+                </label>
+           </div>
+        } 
+
+    </div>
+    <div class="card-footer">
+        <input value="Update" type="submit" class="btn btn-primary" style="width: auto;"/>
+        <a asp-action="EditRole" asp-asp-controller="Administration" asp-route-id="@roleId" class="btn btn-primary" style="width: auto;" >Cancel</a>
+    </div>
+
+</form>
+
