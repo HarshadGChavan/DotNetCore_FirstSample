@@ -123,5 +123,12 @@ namespace FirstSample.Controllers
                 return View(model);
         }
 
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
+
     }
 }

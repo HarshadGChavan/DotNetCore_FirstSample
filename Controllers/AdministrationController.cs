@@ -12,7 +12,8 @@ using System.Linq;
 
 namespace FirstSample.Controllers
 {
-    
+    // Decorated with autorize to only allow controller acess only with Admin User
+    [Authorize(Roles ="Admin")]
     public class AdministrationController : Controller
     {
         private readonly RoleManager<IdentityRole> _roleManager;
