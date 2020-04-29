@@ -1,0 +1,94 @@
+@model EditUserViewModel
+
+@{
+    ViewBag.Title = "Edit User";
+}
+
+<form method="POST" class="mt-3">
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label" asp-for="Id"></label>
+        <div class="col-sm-10">
+            <input class="form-control" asp-for="Id" disabled>
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label" asp-for="Name"></label>
+        <div class="col-sm-10">
+            <input class="form-control" asp-for="Name">
+            <span class="text-danger" asp-validation-for="Name"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label" asp-for="Email"></label>
+        <div class="col-sm-10">
+            <input class="form-control" asp-for="Email">
+            <span class="text-danger" asp-validation-for="Email"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label" asp-for="City"></label>
+        <div class="col-sm-10">
+            <input class="form-control" asp-for="City">
+        </div>
+    </div>
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <div class="form-group row">
+        <div class="col-sm-10">
+            <button type="submit" class="btn btn-primary">Update</button>
+            <a class="btn btn-primary" asp-controller="Administration" asp-action="ListUsers">Cancel</a>
+        </div>
+    </div>
+</form>
+
+<div class="card">
+    <div class="card-header">
+        <h3>User Roles</h3>
+    </div>
+    <div class="card-body">
+        @if(Model.Roles.Any())
+        {
+            foreach (var role in Model.Roles)
+            {
+                <h5 class="card-title">@role</h5>
+            }
+        }
+        else
+        {
+            <h5 class="card-title">None at the moment.</h5>
+        }
+    </div>
+    <div class="card-footer">
+        <a href="#" style="width: auto;" class="btn btn-primary">
+            Manage Roles
+        </a>
+    </div>
+</div>
+
+
+<div class="card">
+    <div class="card-header">
+        <h3>User Claims</h3>
+    </div>
+    <div class="card-body">
+        @if(Model.Claims.Any())
+        {
+            foreach (var claim in Model.Roles)
+            {
+                <h5 class="card-title">@claim</h5>
+            }
+        }
+        else
+        {
+            <h5 class="card-title">None at the moment.</h5>
+        }
+    </div>
+    <div class="card-footer">
+        <a href="#" style="width: auto;" class="btn btn-primary">
+            Manage Claims
+        </a>
+    </div>
+</div>
+
+
+

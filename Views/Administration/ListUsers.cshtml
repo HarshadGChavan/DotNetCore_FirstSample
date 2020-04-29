@@ -1,0 +1,67 @@
+@model IEnumerable<ApplicationUser>
+
+@{
+    ViewBag.Title ="All Users";
+}
+
+<h2> All Users</h2>
+
+@if(Model.Any())
+{
+    <a class="btn btn-primary" style="width: auto;"
+              asp-controller="Account" asp-action="Register" >
+                Add new user
+    </a>
+
+    foreach (var user in Model)
+    {
+        <div class="card mb-3">
+            <div class="card-header">
+                User ID : @user.Id
+            </div>
+            <div class="card-body">
+                <h5 class="card-title"> @user.UserName</h5>
+            </div>
+            <div class="card-footer">
+                <form method="POST" asp-action="DeleteUser" asp-controller="Administration" asp-route-id="@user.Id">
+                    <a class="btn btn-primary" style="width: auto;"  
+                    asp-controller="Administration" asp-action="EditUser" asp-route-id="@user.Id" >Edit</a>
+                   
+                <span id="confirmDeleteion_@user.Id" style="display: none;">
+                   <span> Do you want to delete ?</span>
+                    <button class="btn btn-danger" style="width: auto;"  
+                    type="submit" >Yes</button>
+                    <a href="#" onclick="confirmDelete('@user.Id',false)" class="btn btn-primary" >No</a>
+                </span>
+
+                <span id="deleteSpan_@user.Id">
+                    <a href="#" class="btn btn-danger" onclick="confirmDelete('@user.Id',true)">Delete</a>
+                </span>
+
+                </form>
+            </div>
+        </div>
+    }
+
+}
+else
+{
+    <div class="card">
+        <div class="card-header">
+            No users created yet.
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">
+                Use the button below to create user
+            </h5>
+            <a class="btn btn-primary" style="width: auto;"
+              asp-controller="Account" asp-action="Register" >
+                Add new user
+            </a>
+        </div>
+    </div>
+}
+
+@section Scripts{
+    <script src="../js/CustomScript.js"></script>
+}
