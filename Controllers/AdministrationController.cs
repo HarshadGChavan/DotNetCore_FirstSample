@@ -396,8 +396,99 @@ namespace FirstSample.Controllers
                     }
 
                 return RedirectToAction("EditRole",new {Id = roleId});
-            
-                      
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
+            }
+        }
+
+        [HttpGet]
+        [ActionName("ManageUserRoles")]
+        public async Task<IActionResult> ManageUserRoles(string userid)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userid);
+                if(user == null)
+                {
+                    ViewBag.ErrorMessage=$"User with id:{userid} can not found.";
+                    return View("Not Found");
+                }
+
+                var roles = _roleManager.Roles;
+                List<ManageUserRolesViewModel> lstmanageUserRolesViewModel = new List<ManageUserRolesViewModel>();
+                foreach (var itemRole in roles.ToList())
+                {
+                    var manageUserRolesViewModel = new ManageUserRolesViewModel{
+                            roleId = itemRole.Id,
+                            roleName = itemRole.Name
+                    };
+
+                      if(await _userManager.IsInRoleAsync(user,itemRole.Name))
+                          manageUserRolesViewModel.isSelected = true;
+                      else 
+                            manageUserRolesViewModel.isSelected = false;
+                    lstmanageUserRolesViewModel.Add(manageUserRolesViewModel);
+                }
+                ViewBag.UserID = user.Id; 
+                return View(lstmanageUserRolesViewModel);             
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
+            }
+        }
+
+         [HttpPost]
+        [ActionName("ManageUserRoles")]
+        public async Task<IActionResult> ManageUserRoles_Post(List<ManageUserRolesViewModel> model ,string userid)
+        {
+            try
+            {
+                 var user = await _userManager.FindByIdAsync(userid);
+                    if(user==null)
+                    {
+                        ViewBag.ErrorMessage=$"User with Id : {userid} can not be found.";
+                        return View("NotFound");
+                    }
+
+                    int i =0;
+                    foreach (var itemRole in model.ToList())
+                    {
+                        var role = await _roleManager.FindByIdAsync(itemRole.roleId);
+                        IdentityResult result =null;
+
+                        if(itemRole.isSelected && !(await _userManager.IsInRoleAsync(user,role.Name)) )
+                        {
+                            //... if user selected and not in role then add user from role
+                            result =await _userManager.AddToRoleAsync(user,role.Name);
+                        }
+                        else if (!(itemRole.isSelected) && (await _userManager.IsInRoleAsync(user,role.Name)))
+                        {
+                            //... if user not selected and already in role then remove user from role
+                            result =await _userManager.RemoveFromRoleAsync(user,role.Name);
+                        }
+                        else
+                            continue;
+
+                        if(result.Succeeded)
+                        {
+                            if(i < model.Count - 1)
+                                continue;
+                            else
+                                return RedirectToAction("EditUser",new {Id = user.Id});
+                        }
+
+                        i++;
+                    }
+
+                return RedirectToAction("EditUser",new {Id = user.Id});
+
             }
             catch (Exception ex)
             {
