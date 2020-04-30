@@ -28,29 +28,46 @@ namespace FirstSample.Controllers
         [AllowAnonymous]
         public ViewResult Index()
         {
-             var model = _employeeRepository.GetAllEmployees();
-             return View(model);
-           
+            try
+            {
+                 var model = _employeeRepository.GetAllEmployees();
+                 return View(model);
+            }
+            catch (Exception ex)
+            {
+                 ViewBag.ErrorTitle =ex.Message;
+                 ViewBag.ErrorDescription = ex.StackTrace;
+                 return View("Error");
+            }
         }
 
         // [Route("Details/{id?}")]
         [AllowAnonymous]
         public ViewResult Details(int? id)
         {
-            Employee employee = _employeeRepository.GetEmployee(id.Value);
-            if(employee==null)
-            {
-                Response.StatusCode = 404;
-                return View("EmployeeNotFound",id.Value);
-            }
+            
+             try
+                {
+                    Employee employee = _employeeRepository.GetEmployee(id.Value);
+                    if(employee==null)
+                    {
+                        Response.StatusCode = 404;
+                        return View("EmployeeNotFound",id.Value);
+                    }
 
+                    HomeDetailsViewModel homeDetailsViewModel = new HomeDetailsViewModel(){
+                    Employee = employee,
+                    PageTitle ="Employee Details"
+                    };
 
-            HomeDetailsViewModel homeDetailsViewModel = new HomeDetailsViewModel(){
-            Employee = employee,
-            PageTitle ="Employee Details"
-            };
-
-            return View(homeDetailsViewModel);
+                    return View(homeDetailsViewModel);       
+                }
+                catch (Exception ex)
+                {
+                    ViewBag.ErrorTitle =ex.Message;
+                    ViewBag.ErrorDescription = ex.StackTrace;
+                    return View("Error");
+                }
         }
 
         [HttpGet]
@@ -66,21 +83,30 @@ namespace FirstSample.Controllers
         [Authorize]
         public IActionResult CreatePost(EmployeeCreateViewModel model)
         {
-            if(ModelState.IsValid)
+            try
             {
-                string uniqueFileName =ProcessUploadFile(model);
+                if(ModelState.IsValid)
+                {
+                    string uniqueFileName =ProcessUploadFile(model);
 
-                Employee newEmployee = new Employee{
-                    Name=model.Name,
-                    Email=model.Email,
-                    Department=model.Department,
-                    PhotoPath=uniqueFileName
-                };
+                    Employee newEmployee = new Employee{
+                        Name=model.Name,
+                        Email=model.Email,
+                        Department=model.Department,
+                        PhotoPath=uniqueFileName
+                    };
 
-               _employeeRepository.Add(newEmployee);
-               return RedirectToAction("details",new {id = newEmployee.Id});
+                _employeeRepository.Add(newEmployee);
+                return RedirectToAction("details",new {id = newEmployee.Id});
+                }
+                return View();      
             }
-            return View();
+            catch (Exception ex)
+            {
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
+            }
         }
 
          [HttpGet]
@@ -88,15 +114,24 @@ namespace FirstSample.Controllers
          [Authorize]
         public ViewResult EditGet(int id)
         {
-            Employee employee = _employeeRepository.GetEmployee(id);
-            EmployeeEditViewModel employeeEditViewModel = new EmployeeEditViewModel{
-                Id= employee.Id,
-                Name = employee.Name,
-                Email =employee.Email,
-                Department =employee.Department,
-                ExistingPhotoPath = employee.PhotoPath
-            };
-            return View(employeeEditViewModel);
+           try
+            {
+               Employee employee = _employeeRepository.GetEmployee(id);
+                EmployeeEditViewModel employeeEditViewModel = new EmployeeEditViewModel{
+                    Id= employee.Id,
+                    Name = employee.Name,
+                    Email =employee.Email,
+                    Department =employee.Department,
+                    ExistingPhotoPath = employee.PhotoPath
+                };
+                return View(employeeEditViewModel);             
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
+            }
         }
 
         [HttpPost]
@@ -104,27 +139,35 @@ namespace FirstSample.Controllers
          [Authorize]
         public IActionResult EditPost(EmployeeEditViewModel model)
         {
-            if(ModelState.IsValid)
+             try
             {
-                
-                Employee employee = _employeeRepository.GetEmployee(model.Id);
-                employee.Name =model.Name;
-                employee.Email = model.Email;
-                employee.Department = model.Department;
-                if(model.Photo !=null)
+                if(ModelState.IsValid)
                 {
-                    if(model.ExistingPhotoPath !=null)
+                    Employee employee = _employeeRepository.GetEmployee(model.Id);
+                    employee.Name =model.Name;
+                    employee.Email = model.Email;
+                    employee.Department = model.Department;
+                    if(model.Photo !=null)
                     {
-                      string filePath =  Path.Combine(_hostingEnvironment.WebRootPath,"images",model.ExistingPhotoPath);
-                      System.IO.File.Delete(filePath);
+                        if(model.ExistingPhotoPath !=null)
+                        {
+                        string filePath =  Path.Combine(_hostingEnvironment.WebRootPath,"images",model.ExistingPhotoPath);
+                        System.IO.File.Delete(filePath);
+                        }
+                        employee.PhotoPath =ProcessUploadFile(model);
                     }
-                    employee.PhotoPath =ProcessUploadFile(model);
-                }
 
-               _employeeRepository.Update(employee);
-               return RedirectToAction("index");
+                _employeeRepository.Update(employee);
+                return RedirectToAction("index");
+                }
+                return View();           
             }
-            return View();
+            catch (Exception ex)
+            {
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
+            }
         }
 
 

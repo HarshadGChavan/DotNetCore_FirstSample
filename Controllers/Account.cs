@@ -7,6 +7,7 @@ using FirstSample.ViewModel;
 using Microsoft.AspNetCore.Identity;
 using System.Threading.Tasks;
 using FirstSample.Models;
+using System;
 
 namespace FirstSample.Controllers
 {
@@ -27,15 +28,24 @@ namespace FirstSample.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> IsEmailAvailable(string  email)
         {
-            var result =await _userManager.FindByEmailAsync(email);
-            if(result == null)
+            try
             {
-                // if user not avilable, then return true
-                return Json(true);
+                  var result =await _userManager.FindByEmailAsync(email);
+                if(result == null)
+                {
+                    // if user not avilable, then return true
+                    return Json(true);
+                }
+                else
+                {
+                    return Json($"{email} already in use. Please enter another userid.");
+                }          
             }
-            else
+            catch (Exception ex)
             {
-                return Json($"{email} already in use. Please enter another userid.");
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
             }
         }
 
@@ -53,36 +63,46 @@ namespace FirstSample.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> RegisterPost(RegisterViewModel model)
         {
-            if(ModelState.IsValid)
+             try
             {
-                // Create identity user and assign values for userid and Email
-                var user = new ApplicationUser()
+                if(ModelState.IsValid)
                 {
-                    UserName=model.Email ,
-                    Email=model.Email,
-                    City =model.City
-                };
-
-                // call async method of usermanger to create user and store it in Database
-                var Result = await _userManager.CreateAsync(user,model.Password);
-                // If result is success i.e. user created
-                if(Result.Succeeded)
-                {
-                    if(_signInManager.IsSignedIn(User) && User.IsInRole("Admin"))
+                    // Create identity user and assign values for userid and Email
+                    var user = new ApplicationUser()
                     {
-                        return RedirectToAction("ListUsers","Administration");
+                        UserName=model.Email ,
+                        Email=model.Email,
+                        City =model.City
+                    };
+
+                    // call async method of usermanger to create user and store it in Database
+                    var Result = await _userManager.CreateAsync(user,model.Password);
+                    // If result is success i.e. user created
+                    if(Result.Succeeded)
+                    {
+                        if(_signInManager.IsSignedIn(User) && User.IsInRole("Admin"))
+                        {
+                            return RedirectToAction("ListUsers","Administration");
+                        }
+                        await _signInManager.SignInAsync(user,isPersistent:false);
+                        return RedirectToAction("Index","Home");
                     }
-                    await _signInManager.SignInAsync(user,isPersistent:false);
-                    return RedirectToAction("Index","Home");
+                    
+                    //loopthrough and send al error back from Result.Errors
+                    foreach (var error in Result.Errors)
+                    {
+                        ModelState.AddModelError("",error.Description);
+                    }
                 }
-                
-                //loopthrough and send al error back from Result.Errors
-                foreach (var error in Result.Errors)
-                {
-                    ModelState.AddModelError("",error.Description);
-                }
+                return View(model);
+                                       
             }
-            return View(model);
+            catch (Exception ex)
+            {
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
+            }
         }
 
         [HttpPost]
@@ -107,24 +127,34 @@ namespace FirstSample.Controllers
          [AllowAnonymous]
         public async Task<IActionResult> LoginPost(LoginViewModel model,string returnUrl)
         {
-            if(ModelState.IsValid)
+             try
             {
-                var result =await _signInManager.PasswordSignInAsync(
-                 model.Email,
-                 model.Password,
-                 model.RememberMe,
-                 false  );
-
-                if(result.Succeeded)
+                if(ModelState.IsValid)
                 {
-                    if(!string.IsNullOrEmpty(returnUrl))
-                        return LocalRedirect(returnUrl);
-                   return  RedirectToAction("Index","Home");
-                }
-                    ModelState.AddModelError(string.Empty,"Invalid Login Attempt");
-            }
+                    var result =await _signInManager.PasswordSignInAsync(
+                    model.Email,
+                    model.Password,
+                    model.RememberMe,
+                    false  );
 
-                return View(model);
+                    if(result.Succeeded)
+                    {
+                        if(!string.IsNullOrEmpty(returnUrl))
+                            return LocalRedirect(returnUrl);
+                    return  RedirectToAction("Index","Home");
+                    }
+                        ModelState.AddModelError(string.Empty,"Invalid Login Attempt");
+                }
+
+                    return View(model);
+                            
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
+            }
         }
 
         [AllowAnonymous]

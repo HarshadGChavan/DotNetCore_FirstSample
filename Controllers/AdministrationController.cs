@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using FirstSample.Models;
 using System.Linq;
+using System;
 
 namespace FirstSample.Controllers
 {
@@ -38,57 +39,75 @@ namespace FirstSample.Controllers
         [ActionName("EditUser")]
         public async Task<IActionResult> EditUser_Get(string id)
         {
-            var user = await _userManager.FindByIdAsync(id);
-            if(user == null)
+            try
             {
-                ViewBag.ErrorMessage =$"User with ID {id} not found.";
-                return View("Not Found");
+                var user = await _userManager.FindByIdAsync(id);
+                if(user == null)
+                {
+                    ViewBag.ErrorMessage =$"User with ID {id} not found.";
+                    return View("Not Found");
+                }
+
+                var userClaims = await _userManager.GetClaimsAsync(user);
+                var userRoles = await _userManager.GetRolesAsync(user);
+
+                var model = new EditUserViewModel{
+                    Id = user.Id,
+                    Name = user.UserName,
+                    Email=user.Email,
+                    City=user.City,
+                    Claims=userClaims.Select(c=>c.Value).ToList(),
+                    Roles=userRoles.ToList()
+                };
+
+                return View(model);            
             }
-
-            var userClaims = await _userManager.GetClaimsAsync(user);
-            var userRoles = await _userManager.GetRolesAsync(user);
-
-            var model = new EditUserViewModel{
-                Id = user.Id,
-                Name = user.UserName,
-                Email=user.Email,
-                City=user.City,
-                Claims=userClaims.Select(c=>c.Value).ToList(),
-                Roles=userRoles.ToList()
-            };
-
-            return View(model);
+            catch (Exception ex)
+            {
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
+            }
         }
 
         [HttpPost]
         [ActionName("EditUser")]
         public async Task<IActionResult> EditUser_Post(EditUserViewModel model)
         {
-            var user = await _userManager.FindByIdAsync(model.Id);
-
-            if(user==null)
+            try
             {
-                ViewBag.ErrorMessage =$"User with id {model.Id} not found";
-                return View("Not Sound");
+                 var user = await _userManager.FindByIdAsync(model.Id);
+
+                if(user==null)
+                {
+                    ViewBag.ErrorMessage =$"User with id {model.Id} not found";
+                    return View("Not Sound");
+                }
+                else
+                {
+                    user.Email = model.Email;
+                    user.City=model.City;
+                    user.UserName = model.Name;
+
+                    var result = await _userManager.UpdateAsync(user);
+                    if(result.Succeeded)
+                    {
+                        return RedirectToAction("ListUsers");
+                    }
+
+                    foreach (var error in result.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty,error.Description);
+                    }
+
+                    return View(model);
+                }            
             }
-            else
+            catch (Exception ex)
             {
-                user.Email = model.Email;
-                user.City=model.City;
-                user.UserName = model.Name;
-
-                var result = await _userManager.UpdateAsync(user);
-                if(result.Succeeded)
-                {
-                    return RedirectToAction("ListUsers");
-                }
-
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty,error.Description);
-                }
-
-                return View(model);
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
             }
         }
 
@@ -96,52 +115,70 @@ namespace FirstSample.Controllers
         [ActionName("DeleteUser")]
         public async Task<IActionResult> DeleteUser_Post(string id)
         {
-            var user = await _userManager.FindByIdAsync(id);
+            try
+            {
+                var user = await _userManager.FindByIdAsync(id);
 
-            if(user ==null)
-            {
-                ViewBag.ErrorMessage =$"User with ID {id} not found.";
-                return View("Not Found");
-            }
-
-            var result = await _userManager.DeleteAsync(user);
-            if(result.Succeeded)
-            {
-               return RedirectToAction("ListUsers","Administration");
-            }
-            else
-            {
-                foreach (var error in result.Errors)
+                if(user ==null)
                 {
-                    ModelState.AddModelError(string.Empty,error.Description);
+                    ViewBag.ErrorMessage =$"User with ID {id} not found.";
+                    return View("Not Found");
                 }
+
+                var result = await _userManager.DeleteAsync(user);
+                if(result.Succeeded)
+                {
+                return RedirectToAction("ListUsers","Administration");
+                }
+                else
+                {
+                    foreach (var error in result.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty,error.Description);
+                    }
+                }
+                return View("ListUsers");            
             }
-            return View("ListUsers");
+            catch (Exception ex)
+            {
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
+            }
         }
 
         [HttpPost]
         [ActionName("DeleteRole")]
         public async Task<IActionResult> DeleteRole_Post(string id)
         {
-            var role = await _roleManager.FindByIdAsync(id);
-            if(role == null)
+            try
             {
-                // in case role not found ... return ack to not found action
-                ViewBag.ErrorMessage =$"Role with ID : {id} not found.";
-                   return View("Not Found");
+                   var role = await _roleManager.FindByIdAsync(id);
+                    if(role == null)
+                    {
+                        // in case role not found ... return ack to not found action
+                        ViewBag.ErrorMessage =$"Role with ID : {id} not found.";
+                        return View("Not Found");
+                    }
+
+                    var result = await _roleManager.DeleteAsync(role);
+                    if(result.Succeeded)
+                        return RedirectToAction("ListRoles");
+
+                    // in case any error while deleting role thenreturn back to view
+                    foreach (var error in result.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty,error.Description);
+                    }
+
+                    return View("ListRoles");          
             }
-
-            var result = await _roleManager.DeleteAsync(role);
-            if(result.Succeeded)
-                return RedirectToAction("ListRoles");
-
-            // in case any error while deleting role thenreturn back to view
-            foreach (var error in result.Errors)
+            catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty,error.Description);
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
             }
-
-            return View("ListRoles");
         }
 
         [HttpGet]
@@ -155,28 +192,37 @@ namespace FirstSample.Controllers
         [HttpPost]
         [ActionName("CreateRole")]
         public async Task<IActionResult> CreateRole_Post(CreateRoleViewModel model)
-        {
-            if(ModelState.IsValid)
+        {            
+            try
             {
-                IdentityRole identityRole = new IdentityRole 
-                {
-                    Name = model.RoleName
-                };
+                  if(ModelState.IsValid)
+                    {
+                        IdentityRole identityRole = new IdentityRole 
+                        {
+                            Name = model.RoleName
+                        };
 
-             var result =await _roleManager.CreateAsync(identityRole);
-             if(result.Succeeded)
-             {
-                return RedirectToAction("ListRoles","Administration");
-             }
+                    var result =await _roleManager.CreateAsync(identityRole);
+                    if(result.Succeeded)
+                    {
+                        return RedirectToAction("ListRoles","Administration");
+                    }
 
-             foreach (var error in result.Errors )
-             {
-                 ModelState.AddModelError(string.Empty,error.Description);
-             } 
-                
+                    foreach (var error in result.Errors )
+                    {
+                        ModelState.AddModelError(string.Empty,error.Description);
+                    } 
+                        
+                    }
+
+                    return View(model);          
             }
-
-            return View(model);
+            catch (Exception ex)
+            {
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
+            }
         }
 
 
@@ -192,135 +238,173 @@ namespace FirstSample.Controllers
         [ActionName("EditRole")]
         public async Task<IActionResult> EditRoleGet(string id)
         {
-           var roleResult = await _roleManager.FindByIdAsync(id) ;
-           if(roleResult == null)
-           {
-               ViewBag.ErrorMessage =$"Role with id: {id} not found.";
-               return RedirectToAction("NotFound");
-           }
-
-            // else if we have role then set edit role view model elements and pass it 
-           var model =new  EditRoleViewModel {
-               Id=roleResult.Id,
-               RoleName = roleResult.Name
-           };
-
-            // .... Iterate through all users and find users in role selected
-                foreach (var itemUser in _userManager.Users.ToList() )
+            try
+            {
+                 var roleResult = await _roleManager.FindByIdAsync(id) ;
+                if(roleResult == null)
                 {
-                   if( await _userManager.IsInRoleAsync(itemUser,roleResult.Name))
-                   {
-                      model.Users.Add(itemUser.UserName);
-                   }
+                    ViewBag.ErrorMessage =$"Role with id: {id} not found.";
+                    return RedirectToAction("NotFound");
                 }
-                          
-            return View(model);
+
+                    // else if we have role then set edit role view model elements and pass it 
+                var model =new  EditRoleViewModel {
+                    Id=roleResult.Id,
+                    RoleName = roleResult.Name
+                };
+
+                    // .... Iterate through all users and find users in role selected
+                        foreach (var itemUser in _userManager.Users.ToList() )
+                        {
+                        if( await _userManager.IsInRoleAsync(itemUser,roleResult.Name))
+                        {
+                            model.Users.Add(itemUser.UserName);
+                        }
+                        }
+                                
+                    return View(model);           
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
+            }
         }
 
          [HttpPost]
         [ActionName("EditRole")]
         public async Task<IActionResult> EditRolePost(EditRoleViewModel  model)
         {
-            var roleResult = await _roleManager.FindByIdAsync(model.Id);
-             if(roleResult == null)
-           {
-               ViewBag.ErrorMessage =$"Role with id: {model.Id} not found.";
-               return RedirectToAction("NotFound");
-           }
-            else
+            try
             {
-                roleResult.Name = model.RoleName;
-                var result = await _roleManager.UpdateAsync(roleResult);
-                if(result.Succeeded)
+                 var roleResult = await _roleManager.FindByIdAsync(model.Id);
+                    if(roleResult == null)
                 {
-                    return RedirectToAction("ListRoles","Administration");
+                    ViewBag.ErrorMessage =$"Role with id: {model.Id} not found.";
+                    return RedirectToAction("NotFound");
                 }
-                else
-                {
-                    foreach (var itemError in result.Errors)
+                    else
                     {
-                        ModelState.AddModelError(string.Empty,itemError.Description);
+                        roleResult.Name = model.RoleName;
+                        var result = await _roleManager.UpdateAsync(roleResult);
+                        if(result.Succeeded)
+                        {
+                            return RedirectToAction("ListRoles","Administration");
+                        }
+                        else
+                        {
+                            foreach (var itemError in result.Errors)
+                            {
+                                ModelState.AddModelError(string.Empty,itemError.Description);
+                            }
+                        }
                     }
-                }
+                    return View(model);            
             }
-            return View(model);
-
+            catch (Exception ex)
+            {
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
+            }
         }
 
         [HttpGet]
         [ActionName("EditUsersInRole")]
         public async Task<IActionResult> EditUsersInRole_Get(string roleId)
         {
-            ViewBag.roleId = roleId;
-            var role =await _roleManager.FindByIdAsync(roleId);
-            if(role == null)
+           try
             {
-                ViewBag.ErrorMessage =$"Role with ID: {roleId} cannot be found.";
-                return View("NotFound");
+                    ViewBag.roleId = roleId;
+                    var role =await _roleManager.FindByIdAsync(roleId);
+                    if(role == null)
+                    {
+                        ViewBag.ErrorMessage =$"Role with ID: {roleId} cannot be found.";
+                        return View("NotFound");
+                    }
+                    var model = new List<UserRoleViewModel>();
+                    foreach (var user in _userManager.Users.ToList())
+                    {
+                        var userRole = new UserRoleViewModel(){
+                            UserId=user.Id,
+                            UserName = user.UserName,
+                        };
+                        
+                        if(await _userManager.IsInRoleAsync(user,role.Name))
+                        {
+                            userRole.IsSelected = true;
+                        }
+                        else 
+                            userRole.IsSelected = false;
+
+                        model.Add(userRole);
+                    }           
+
+                    return View(model);         
             }
-            var model = new List<UserRoleViewModel>();
-            foreach (var user in _userManager.Users.ToList())
+            catch (Exception ex)
             {
-                var userRole = new UserRoleViewModel(){
-                    UserId=user.Id,
-                    UserName = user.UserName,
-                };
-                
-                  if(await _userManager.IsInRoleAsync(user,role.Name))
-                  {
-                     userRole.IsSelected = true;
-                  }
-                  else 
-                       userRole.IsSelected = false;
-
-                model.Add(userRole);
-            }           
-
-            return View(model);
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
+            }
         }
 
         [HttpPost]
         [ActionName("EditUsersInRole")]
         public async Task<IActionResult> EditUsersInRole_Post(List<UserRoleViewModel> model,string roleId)
-        {
-            var role = await _roleManager.FindByIdAsync(roleId);
-            if(role==null)
+        {   
+             try
             {
-                ViewBag.ErrorMessage=$"Role with Id : {roleId} can not be found.";
-                return View("NotFound");
-            }
+                    
+                var role = await _roleManager.FindByIdAsync(roleId);
+                    if(role==null)
+                    {
+                        ViewBag.ErrorMessage=$"Role with Id : {roleId} can not be found.";
+                        return View("NotFound");
+                    }
 
-            int i =0;
-            foreach (var itemUserRole in model.ToList())
+                    int i =0;
+                    foreach (var itemUserRole in model.ToList())
+                    {
+                        var user = await _userManager.FindByIdAsync(itemUserRole.UserId);
+                        IdentityResult result =null;
+
+                        if(itemUserRole.IsSelected && !(await _userManager.IsInRoleAsync(user,role.Name)) )
+                        {
+                            //... if user selected and not in role then add user from role
+                            result =await _userManager.AddToRoleAsync(user,role.Name);
+                        }
+                        else if (!(itemUserRole.IsSelected) && (await _userManager.IsInRoleAsync(user,role.Name)))
+                        {
+                            //... if user not selected and already in role then remove user from role
+                            result =await _userManager.RemoveFromRoleAsync(user,role.Name);
+                        }
+                        else
+                            continue;
+
+                        if(result.Succeeded)
+                        {
+                            if(i < model.Count - 1)
+                                continue;
+                            else
+                                return RedirectToAction("EditRole",new {Id = roleId});
+                        }
+
+                        i++;
+                    }
+
+                return RedirectToAction("EditRole",new {Id = roleId});
+            
+                      
+            }
+            catch (Exception ex)
             {
-                var user = await _userManager.FindByIdAsync(itemUserRole.UserId);
-                IdentityResult result =null;
-
-                if(itemUserRole.IsSelected && !(await _userManager.IsInRoleAsync(user,role.Name)) )
-                {
-                    //... if user selected and not in role then add user from role
-                     result =await _userManager.AddToRoleAsync(user,role.Name);
-                }
-                else if (!(itemUserRole.IsSelected) && (await _userManager.IsInRoleAsync(user,role.Name)))
-                {
-                    //... if user not selected and already in role then remove user from role
-                    result =await _userManager.RemoveFromRoleAsync(user,role.Name);
-                }
-                else
-                    continue;
-
-                if(result.Succeeded)
-                {
-                    if(i < model.Count - 1)
-                        continue;
-                    else
-                        return RedirectToAction("EditRole",new {Id = roleId});
-                }
-
-                i++;
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
             }
-
-          return RedirectToAction("EditRole",new {Id = roleId});
         }
 
     }
