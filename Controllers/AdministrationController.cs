@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using FirstSample.Models;
 using System.Linq;
 using System;
+using System.Security.Claims;
 
 namespace FirstSample.Controllers
 {
@@ -56,7 +57,7 @@ namespace FirstSample.Controllers
                     Name = user.UserName,
                     Email=user.Email,
                     City=user.City,
-                    Claims=userClaims.Select(c=>c.Value).ToList(),
+                    Claims=userClaims.Select(c=>c.Type +"  : "+ c.Value).ToList(),
                     Roles=userRoles.ToList()
                 };
 
@@ -149,6 +150,7 @@ namespace FirstSample.Controllers
 
         [HttpPost]
         [ActionName("DeleteRole")]
+        [Authorize(Policy="DeleteRolePolicy")]
         public async Task<IActionResult> DeleteRole_Post(string id)
         {
             try
@@ -488,6 +490,92 @@ namespace FirstSample.Controllers
                     }
 
                 return RedirectToAction("EditUser",new {Id = user.Id});
+
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
+            }
+        }
+
+        [HttpGet]
+        [ActionName("ManageClaims")]
+        public async Task<IActionResult> ManageClaims_Get(string userid)
+        {
+            try
+            {
+               var user = await _userManager.FindByIdAsync(userid);
+               if(user==null)
+               {
+                  ViewBag.ErrorMessage =$"User with ID: {userid} not found.";
+                  return View("NotFound");
+               }
+
+               var exisitingUserClaim = await _userManager.GetClaimsAsync(user);
+               var model = new UserClaimsViewModel(){
+                   userID = userid
+               };
+
+               foreach (var itemClaim in ClaimsStore.AllClaims)
+               {
+                   var userClaim = new UserClaim(){
+                        ClaimType = itemClaim.Type
+                   };
+                   
+                   if(exisitingUserClaim.Any(c =>c.Type == itemClaim.Type && c.Value =="true"))
+                       userClaim.IsSelected = true;
+                    else 
+                        userClaim.IsSelected = false;
+
+                 model.Claims.Add(userClaim);
+               } 
+
+              return View(model);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorTitle =ex.Message;
+                ViewBag.ErrorDescription = ex.StackTrace;
+                return View("Error");
+            }
+        }
+
+        [HttpPost]
+        [ActionName("ManageClaims")]
+        public async Task<IActionResult> ManageClaims_Post(UserClaimsViewModel model)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(model.userID);
+                if(user == null)
+                {
+                    ViewBag.ErrorMessage =$"User with ID: {model.userID} not found";
+                    return View("NotFound");
+                }
+
+                var exisitingUserClaims = await _userManager.GetClaimsAsync(user);
+                var removeResult = await _userManager.RemoveClaimsAsync(user,exisitingUserClaims);
+
+                if(!removeResult.Succeeded)
+                {
+                    ModelState.AddModelError(string.Empty,"Cananot remove users existing claims.");
+                    return View(model);
+                }
+
+                var result = await _userManager.AddClaimsAsync(
+                    user,
+                    model.Claims.Select(c=>new Claim(c.ClaimType,c.IsSelected ? "true" : "false") )
+                  );
+
+                if(!result.Succeeded)
+                {
+                    ModelState.AddModelError(string.Empty,"Ca not add selected claims for user");
+                    return View(model);
+                }
+
+              return RedirectToAction("EditUser",new{id=model.userID});
 
             }
             catch (Exception ex)

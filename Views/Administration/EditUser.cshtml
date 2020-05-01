@@ -73,7 +73,7 @@
     <div class="card-body">
         @if(Model.Claims.Any())
         {
-            foreach (var claim in Model.Roles)
+            foreach (var claim in Model.Claims)
             {
                 <h5 class="card-title">@claim</h5>
             }
@@ -84,7 +84,7 @@
         }
     </div>
     <div class="card-footer">
-        <a  style="width: auto;" class="btn btn-primary" href="#" >
+        <a asp-controller="Administration" asp-action="ManageClaims" asp-route-userid="@Model.Id" style="width: auto;" class="btn btn-primary">
             Manage Claims
         </a>
     </div>

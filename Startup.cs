@@ -39,6 +39,16 @@ namespace FirstSample
                 options.Password.RequiredUniqueChars =3;
             });
 
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("DeleteRolePolicy",
+                    policy=>policy.RequireClaim("Delete Role")
+                                  .RequireClaim("Create Role"));
+                
+                options.AddPolicy("EditRolePolicy",
+                  policy => policy.RequireClaim("Edit Role") );
+            }  );
+
             services.AddMvc(config=> {
                 var policy = new AuthorizationPolicyBuilder()
                             .RequireAuthenticatedUser()
