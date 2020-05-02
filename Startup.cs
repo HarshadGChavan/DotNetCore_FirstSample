@@ -49,6 +49,14 @@ namespace FirstSample
                   policy => policy.RequireClaim("Edit Role") );
             }  );
 
+            services.AddAuthentication()
+                    .AddGoogle(options =>
+                            {
+                                options.ClientId ="432303751834-e19rl6v33p1dl8oospfso3hisjqkvqq8.apps.googleusercontent.com";
+                                options.ClientSecret ="JbvgrGUKYx2ljXeQ0ai2lsKR";
+                            }
+                    );
+
             services.AddMvc(config=> {
                 var policy = new AuthorizationPolicyBuilder()
                             .RequireAuthenticatedUser()
